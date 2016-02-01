@@ -61,7 +61,6 @@
 				/* Read the data 65 KB at a time and write to the file */
 				while ($data = fread($putdata, 65535)) {
 					fwrite($fp, $data);	
-					echo $data;
 				}
 
 				/* Close the streams */

@@ -1,4 +1,5 @@
 <?php
+
 	$basePath = __DIR__;
 	$protocol = $_SERVER['SERVER_PROTOCOL']?:'HTTP/1.1';
 
@@ -11,9 +12,8 @@
 		exit;
 	}
 
-	function sanitizeTarget($basePath, $target) {
-		$target = preg_replace('@'.preg_quote($basePath,'@') .'@','',$target,1);
-		$target = preg_replace("/^\//", "", $target);
+	function sanitizeTarget( $target) {
+		$target = preg_replace("@^/@", "", $target);
 
 		// Only allow A-Z, 0-9, .-_/
 		$target = preg_replace("/[^A-Za-z\.\/0-9_-]/", "", $target);
@@ -29,7 +29,7 @@
 	}
 
 	$target = $_SERVER["REQUEST_URI"];
-	$target = sanitizeTarget($basePath, $target);
+	$target = sanitizeTarget($target);
 
 	if (!checkTarget($target)) {
 		header($protocol ." 403 Forbidden");

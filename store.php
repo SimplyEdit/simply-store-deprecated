@@ -1,16 +1,20 @@
 <?php
+	$basePath = __DIR__;
+	$protocol = $_SERVER['SERVER_PROTOCOL']?:'HTTP/1.1';
+
 	if (
+		(isset($_SERVER['REQUEST_METHOD'])) &&
 		($_SERVER['REQUEST_METHOD'] != 'PUT') &&
 		($_SERVER['REQUEST_METHOD'] != 'DELETE')
 	) {
-		header("HTTP/1.1 403 Bad request");
+		header($protocol ." 405 Method not allowed");
 		exit;
 	}
 
-	function sanitizeTarget($target) {
-		$target = str_replace(dirname($_SERVER['SCRIPT_NAME']), '', $target);
+	function sanitizeTarget($basePath, $target) {
+		$target = preg_replace('@'.preg_quote($basePath,'@') .'@','',$target,1);
 		$target = preg_replace("/^\//", "", $target);
-	
+
 		// Only allow A-Z, 0-9, .-_/
 		$target = preg_replace("/[^A-Za-z\.\/0-9_-]/", "", $target);
 
@@ -21,63 +25,57 @@
 	}
 
 	function checkTarget($target) {
-		if (preg_match("/^data\//", $target)) {
-			return true;
-		}
-		if (preg_match("/^img\//", $target)) {
-			return true;
-		}
-		return false;
+		return preg_match("@^(img|data)/@", $target);
 	}
 
 	$target = $_SERVER["REQUEST_URI"];
-	$target = sanitizeTarget($target);
+	$target = sanitizeTarget($basePath, $target);
 
 	if (!checkTarget($target)) {
-		header("HTTP/1.1 404 Not found");
+		header($protocol ." 403 Forbidden");
 		exit;
 	}
 
-	$fileinfo = explode("/", $target);
-	$filename = array_pop($fileinfo);
+	preg_match('@(?<dirname>.+/)(?<filename>[^/]*)@',$target,$matches);
+	$filename = $matches['filename'];
+	$dirname  = $basePath . '/' . $matches['dirname'];
 
 	switch ($_SERVER['REQUEST_METHOD']) {
 		case 'PUT':
-			foreach ($fileinfo as $dirname) {
-				if (!file_exists($dirname)) {
-					mkdir($dirname);
-				}
-				chdir($dirname);
+			if (!file_exists($dirname)) {
+				mkdir($dirname, true);
 			}
 
 			if ($filename) {
 				/* PUT data comes in on the stdin stream */
-				$putdata = fopen("php://input", "r");
+				$in = fopen("php://input", "r");
 
 				/* Open a file for writing */
-				//$temp = tempnam("data/", "puthandler-");
-				$fp = fopen($filename, "w");
+				$tempfile = tempnam($dirname, 'put-XXXXXX');
 
-				/* Read the data 65 KB at a time and write to the file */
-				while ($data = fread($putdata, 65535)) {
-					fwrite($fp, $data);	
-				}
+				$out = fopen($tempfile, "w");
+				$res = stream_copy_to_stream($in,$out);
 
 				/* Close the streams */
-				fclose($fp);
-				fclose($putdata);
+				fclose($out);
+				fclose($in);
+
+				if($res) {
+					rename($tempfile, $dirname.$filename);
+				} else {
+					unlink($tempfile);
+				}
 			}
-		break;
+			break;
 		case 'DELETE':
 			if ($filename) {
 				unlink($target);
 			} else {
 				rmdir($target);
 			}
-		break;
+			break;
 		default:
-			header("HTTP/1.1 403 Method not allowed");
+			header($protocol ." 405 Method not allowed");
 			echo $_SERVER['REQUEST_METHOD'];
-		break;
+			break;
 	}
-?>

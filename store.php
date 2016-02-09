@@ -68,10 +68,15 @@
 			}
 			break;
 		case 'DELETE':
-			if ($filename) {
-				unlink($target);
+			$target = $dirname . $filename;
+			if ( file_exists($target ) ) {
+				if ( $filename ) {
+					unlink($target);
+				} else {
+					rmdir($target);
+				}
 			} else {
-				rmdir($target);
+				header($protocol . " 404 Not Found");
 			}
 			break;
 		default:

@@ -4,6 +4,7 @@
 #- give the www-data user read/write grants for the data directory (chown www-data:www-data data/);
 #
 # example .htaccess file
+```
 <Limit PUT DELETE>
     AuthUserFile /path/outside/webroot/simply-store-htpasswd
     AuthType Basic
@@ -22,3 +23,4 @@
 	RewriteRule ^logout$ logout.php [L,END]
 </Limit>
 Options +Indexes
+```

@@ -40,72 +40,65 @@
 	$filename = $matches['filename'];
 	$dirname  = $basePath . '/' . $matches['dirname'];
 
-	switch ($_SERVER['REQUEST_METHOD']) {
-		case 'PUT':
-			if (!file_exists($dirname)) {
-				// suppress errors from mkdir, it is noisy
-				$res = @mkdir($dirname, true);
-				if ($res == false) {
-					header($protocol . " 412 Precondition Failed");
-					echo "Directory not writeable\n";
-					exit();
-				}
-			}
-
-			if ( !is_writable($dirname) ){
+	if ( $_SERVER['REQUEST_METHOD'] == "PUT" ) {
+		if (!file_exists($dirname)) {
+			// suppress errors from mkdir, it is noisy
+			$res = @mkdir($dirname, true);
+			if ($res == false) {
 				header($protocol . " 412 Precondition Failed");
 				echo "Directory not writeable\n";
 				exit();
-			} else {
-				if ( $filename ) {
-					$exists = file_exists($dirname.$filename);
-					if (
-						($exists === true && is_writable($dirname.$filename) ) ||
-						$exists === false
-					){
-						/* PUT data comes in on the stdin stream */
-						$in = fopen("php://input", "r");
+			}
+		}
 
-						/* Open a file for writing */
-						$tempfile = tempnam($dirname, 'put-XXXXXX');
+		if ( !is_writable($dirname) ){
+			header($protocol . " 412 Precondition Failed");
+			echo "Directory not writeable\n";
+			exit();
+		} else {
+			if ( $filename ) {
+				$exists = file_exists($dirname.$filename);
+				if (
+					($exists === true && is_writable($dirname.$filename) ) ||
+					$exists === false
+				){
+					/* PUT data comes in on the stdin stream */
+					$in = fopen("php://input", "r");
 
-						$out = fopen($tempfile, "w");
-						$res = stream_copy_to_stream($in,$out);
+					/* Open a file for writing */
+					$tempfile = tempnam($dirname, 'put-XXXXXX');
 
-						/* Close the streams */
-						fclose($out);
-						fclose($in);
+					$out = fopen($tempfile, "w");
+					$res = stream_copy_to_stream($in,$out);
 
-						if($res) {
-							$res = rename($tempfile, $dirname.$filename);
-							if ($res == false) {
-								header($protocol . " 412 Precondition Failed");
-								unlink($tempfile);
-							}
-						} else {
+					/* Close the streams */
+					fclose($out);
+					fclose($in);
+
+					if($res) {
+						$res = rename($tempfile, $dirname.$filename);
+						if ($res == false) {
+							header($protocol . " 412 Precondition Failed");
 							unlink($tempfile);
 						}
 					} else {
-						header($protocol . " 412 Precondition Failed");
-						echo "Target file not writeable\n";
+						unlink($tempfile);
 					}
-				}
-			}
-			break;
-		case 'DELETE':
-			$target = $dirname . $filename;
-			if ( file_exists($target ) ) {
-				if ( $filename ) {
-					unlink($target);
 				} else {
-					rmdir($target);
+					header($protocol . " 412 Precondition Failed");
+					echo "Target file not writeable\n";
 				}
-			} else {
-				header($protocol . " 404 Not Found");
 			}
-			break;
-		default:
-			header($protocol ." 405 Method not allowed");
-			echo $_SERVER['REQUEST_METHOD'];
-			break;
+		}
+	} else if ( $_SERVER['REQUEST_METHOD'] == "DELETE" ) {
+		$target = $dirname . $filename;
+		if ( file_exists($target ) ) {
+			if ( $filename ) {
+				unlink($target);
+			} else {
+				rmdir($target);
+			}
+		} else {
+			header($protocol . " 404 Not Found");
+		}
 	}

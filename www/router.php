@@ -11,9 +11,17 @@
 
 	$templateDir = '/templates/';
 	$request     = null;
-	
+
 	$request     = http::request();
-	$data        = json_decode( filesystem::get('/data/','data.json'), true );
+	try {
+		$data        = json_decode( filesystem::get('/data/','data.json'), true );
+		if($data === null ){
+			$data = [];
+		}
+	} catch ( Exception $e ) {
+		$data = [];
+	}
+
 	$path        = $request['directory'].$request['filename'];
 	$status      = 200;
 

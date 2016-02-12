@@ -29,7 +29,8 @@ class http {
 	{
 		$target = $_SERVER["REQUEST_URI"];
 		$target = self::sanitizeTarget($target);
-		preg_match('@(?<dirname>.+/)(?<filename>[^/]*)@',$target,$matches);
+
+		preg_match('@(?<dirname>.+/)?(?<filename>[^/]*)@',$target,$matches);
 
 		$filename = isset($matches['filename']) ? $matches['filename'] : '';
 		$dirname  = '/' . ( isset($matches['dirname']) ? $matches['dirname'] : '');

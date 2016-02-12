@@ -8,7 +8,7 @@
 	filesystem::allow('/data/','text/javascript');
 	filesystem::allow('/data/','text/x-json');
 
-	filesystem::allow('/img/','image/*');
+	filesystem::allow('/img/','image/.*');
 
 	filesystem::check('put', '/data/', function($filename, $realfile) {
 		$contents = file_get_contents($realfile);

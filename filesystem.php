@@ -44,8 +44,7 @@ class filesystem {
 	{
 		list($realdir, $realfile)=self::realpaths($dirname, $filename);
 		if (!file_exists($realdir)) {
-			// suppress errors from mkdir, it is noisy
-			$res = @mkdir($realdir, true);
+			$res = mkdir($realdir, 0755, true);
 			if ($res == false) {
 				self::dirNotWritable($dirname);
 			}

@@ -36,7 +36,7 @@
 
 	} else {
 		http::response(404);
-		echo <<<'EOF';
+		echo '
 <!doctype html>
 <html lang="en">
 <head>
@@ -47,5 +47,5 @@
 	<h1>Page not found (error: 404)</h1>
 </body>
 </html>
-EOF;
+';
 	}

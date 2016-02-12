@@ -4,9 +4,8 @@
 
 	filesystem::basedir(__DIR__);
 
-	filesystem::allow('/data/','application/json');
-	filesystem::allow('/data/','text/javascript');
-	filesystem::allow('/data/','text/x-json');
+	filesystem::allow('/data/','application/json.*');
+	filesystem::allow('/data/','text/.*');
 
 	filesystem::allow('/img/','image/.*');
 

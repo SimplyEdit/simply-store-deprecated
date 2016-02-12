@@ -29,6 +29,10 @@ class filesystem {
 	{
 		$realfile = realpath(self::$basedir.$dirname.$filename);
 		$realdir  = realpath(self::$basedir.$dirname);
+		$realdir .= '/';
+		if ( !$realfile ) {
+			$realfile = $realdir . $filename;
+		}
 		if ( strpos($realfile, self::$basedir)!==0 
 			|| strpos($realdir, self::$basedir)!==0 ) {
 			throw new fsException('Attempted file access outside base directory', 110);
@@ -74,7 +78,7 @@ class filesystem {
 				rmdir($realfile);
 			}
 		} else {
-			throw new sfException('File not found '.$dirname.$filename, 105);
+			throw new fsException('File not found '.$dirname.$filename, 105);
 		}
 	}
 
@@ -85,7 +89,18 @@ class filesystem {
 		if ( file_exists($realfile) ) {
 			return file_get_contents($realfile);
 		} else {
-			throw new sfException('File not found '.$dirname.$filename, 105);
+			throw new fsException('File not found '.$dirname.$filename, 105);
+		}
+	}
+
+	public static function readfile($dirname, $filename)
+	{
+		list($realdir, $realfile)=self::realpaths($dirname, $filename);
+		self::runChecks('get', $dirname.$filename, $realfile);
+		if ( file_exists($realfile) ) {
+			readfile($realfile);
+		} else {
+			throw new fsException('File not found '.$dirname.$filename, 105);
 		}
 	}
 
@@ -106,7 +121,8 @@ class filesystem {
 		if ( !$allowed ) {
 			throw new fsException('Access denied for '.$dirname.$filename, 106);
 		}
-		$mimetype = finfo::file( $tempfile, FILEINFO_MIME_TYPE );
+		$finfo      = new finfo(FILEINFO_MIME);
+		$mimetype   = $finfo->file($tempfile);
 		$mimetypeRe = '{'.implode($mimetypes, '|').'}i';
 		if ( !preg_match($mimetypeRe, $mimetype) ) {
 			throw new fsException('Files with mimetype '.$mimetype.' are not allowed in '.$dirname, 108);
@@ -119,9 +135,11 @@ class filesystem {
 		if ( !isset(self::$checks[$method]) ) {
 			return;
 		}
-		foreach ( self::$checks[$method] as $path => $callback ) {
-			if ( strpos($filename, $path)===0 ) {
-				$callback($filename, $tempfile);
+		foreach ( self::$checks[$method] as $path => $checks ) {
+			foreach ( $checks as $callback ) {
+				if ( strpos($filename, $path)===0 ) {
+					$callback($filename, $tempfile);
+				}
 			}
 		}
 	}
@@ -152,7 +170,8 @@ class filesystem {
 
 	private static function passthru($dirname, $filename, $hash=null)
 	{
-		$lock = self::lock($dirname, $filename);
+		list($realdir,$realfile)=self::realpaths($dirname,$filename);
+		$lock = self::lock($realfile);
 		if ( !$lock ) {
 			throw new fsException('Could not lock '.$dirname.$filename.' for writing', 109);
 		}
@@ -160,7 +179,7 @@ class filesystem {
 		$in       = fopen("php://input", "r");
 
 		/* Open a file for writing */
-		$tempfile = tempnam($dirname, 'put-XXXXXX');
+		$tempfile = tempnam($realdir, 'put-XXXXXX');
 
 		$out      = fopen($tempfile, "w");
 		$res      = stream_copy_to_stream($in,$out);
@@ -176,7 +195,7 @@ class filesystem {
 					throw new fsException('Access denied for '.$dirname.$filename, 106);
 				}
 				self::runChecks('put', $dirname.$filename, $tempfile);
-				$res = rename($tempfile, $dirname.$filename);
+				$res = rename($tempfile, $realfile);
 				if ($res == false) {
 					self::renameFailed($dirname.$filename, $tempfile);
 				}
@@ -194,13 +213,12 @@ class filesystem {
 		return true;
 	}
 
-	private static function lock($dirname, $filename)
+	private static function lock($filename)
 	{
-		$fp = fopen($dirname.$filename.'.lock', 'w');
+		$fp = fopen($filename.'.lock', 'w');
 		if ( $fp && flock($fp, LOCK_EX ) ) {
 			return [
 				'resource' => $fp,
-				'dirname'  => $dirname,
 				'filename' => $filename
 			];
 		}
@@ -211,6 +229,6 @@ class filesystem {
 	{
 		flock($lock['resource'], LOCK_UN);
 		fclose($lock['resource']);
-		unlink($lock['dirname'].$lock['filename'].'.lock');
+		unlink($lock['filename'].'.lock');
 	}
 }

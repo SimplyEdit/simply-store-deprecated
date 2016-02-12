@@ -1,19 +1,20 @@
 <?php
+
+	error_reporting(E_ALL);
+	ini_set('display_errors',1);
+
 	require_once(__DIR__.'/../http.php');
 	require_once(__DIR__.'/../filesystem.php');
 
 	filesystem::basedir(__DIR__);
 	http::format('html');
 
-	$datafile    = __DIR__.'/data/data.json';
-	$templateDir = __DIR__.'/templates/';
+	$templateDir = '/templates/';
 	$request     = null;
 	
 	$request     = http::request();
-
-	$data        = json_decode(filesystem::get($request['dirname'], $request['filename']));
-
-	$path        = $request['dirname'].$request['filename'];
+	$data        = json_decode( filesystem::get('/data/','data.json'), true );
+	$path        = $request['directory'].$request['filename'];
 	$status      = 200;
 
 	if( !isset($data[$path]) ) {

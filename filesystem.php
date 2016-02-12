@@ -202,10 +202,10 @@ class filesystem {
 			} else {
 			}
 		} catch( \Exception $e ) {
+			unlink($tempfile);			
 			$exception = $e;
 		} finally {
 			self::unlock($lock);
-			unlink($tempfile);			
 		}
 		if ( $exception ) {
 			throw $exception;

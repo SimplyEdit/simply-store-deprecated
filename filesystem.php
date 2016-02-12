@@ -33,7 +33,7 @@ class filesystem {
 		if ( !$realfile ) {
 			$realfile = $realdir . $filename;
 		}
-		if ( strpos($realfile, self::$basedir)!==0 
+		if ( strpos($realfile, self::$basedir)!==0
 			|| strpos($realdir, self::$basedir)!==0 ) {
 			throw new fsException('Attempted file access outside base directory', 110);
 		}
@@ -154,7 +154,7 @@ class filesystem {
 		// check owner and current user
 		throw new fsException('Directory '.$dirname.' is not writable', 102);
 	}
-	
+
 	private static function fileNotWritable($file)
 	{
 		// FIXME: try to find out why it is not writable
@@ -202,7 +202,7 @@ class filesystem {
 			} else {
 			}
 		} catch( \Exception $e ) {
-			unlink($tempfile);			
+			unlink($tempfile);
 			$exception = $e;
 		} finally {
 			self::unlock($lock);

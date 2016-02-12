@@ -6,7 +6,7 @@
 	http::format('html');
 
 	$datafile    = __DIR__.'/data/data.json';
-	$templateDir = __DIR__.'/../templates/';
+	$templateDir = __DIR__.'/templates/';
 	$request     = null;
 	
 	$request     = http::request();

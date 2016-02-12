@@ -29,10 +29,17 @@ class filesystem {
 	{
 		$realfile = realpath(self::$basedir.$dirname.$filename);
 		$realdir  = realpath(self::$basedir.$dirname);
-		$realdir .= '/';
+
+		if ( !$realdir ) {
+			$realdir = self::$basedir.$dirname;
+		} else {
+			$realdir .= '/';
+		}
+
 		if ( !$realfile ) {
 			$realfile = $realdir . $filename;
 		}
+
 		if ( strpos($realfile, self::$basedir)!==0
 			|| strpos($realdir, self::$basedir)!==0 ) {
 			throw new fsException('Attempted file access outside base directory', 110);

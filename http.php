@@ -1,7 +1,9 @@
 <?php
 
 class http {
-	
+
+	private static $format = 'json';
+
 	private static function sanitizeTarget($target)
 	{
 		// convert \ to /
@@ -18,6 +20,11 @@ class http {
 		return $target;
 	}
 
+	public static function format($format)
+	{
+		self::$format = $format;
+	}
+
 	public static function request()
 	{
 		$target = $_SERVER["REQUEST_URI"];
@@ -29,14 +36,24 @@ class http {
 			'protocol'  => $_SERVER['SERVER_PROTOCOL']?:'HTTP/1.1',
 			'method'    => $_SERVER['REQUEST_METHOD'],
 			'directory' => $dirname,
-			'filename'  => $filename
+			'filename'  => $filename,
+			'user'      => $_SERVER['PHP_AUTH_USER'],
+			'password'  => $_SERVER['PHP_AUTH_PW']
 		];
 	}
 
-	public static function response($status, $data)
+	public static function response($status, $data='')
 	{
 		http_response_code($status);
-		echo json_encode($data, JSON_UNESCAPED_UNICODE);
+		switch(self::$format) {
+			case 'html':
+				echo $data;
+			break;
+			case 'json':
+			default:
+				echo json_encode($data, JSON_UNESCAPED_UNICODE);
+			break;
+		}
 	}
 
 }

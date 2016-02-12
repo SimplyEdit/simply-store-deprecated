@@ -78,6 +78,17 @@ class filesystem {
 		}
 	}
 
+	public static function get($dirname, $filename)
+	{
+		list($realdir, $realfile)=self::realpaths($dirname, $filename);
+		self::runChecks('get', $dirname.$filename, $realfile);
+		if ( file_exists($realfile) ) {
+			return file_get_contents($realfile);
+		} else {
+			throw new sfException('File not found '.$dirname.$filename, 105);
+		}
+	}
+
 	public static function check($method, $filename, $callback)
 	{
 		self::$checks[$method][$filename][] = $callback;

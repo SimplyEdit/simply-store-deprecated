@@ -1,7 +1,7 @@
 #Steps to deploy this storage layer:
 #- create a htpasswd file (somewhere outside the webroot) (htpasswd -c simply-store-htpasswd username);
 #- add the .htaccess file in the simply store root:
-#- give the www-data user read/write grants for the data directory (chown www-data:www-data data/);
+#- give the www-data user read/write grants for the data and img directory (chown www-data:www-data data/);
 #
 # example .htaccess file
 ```

@@ -52,12 +52,16 @@
 	$status = 200;
 
 	try {
-		if ( $request['method']=='PUT') {
+		if ( !$request['user'] ) {
+			$status = 403; //Method not allowed
+			$result = [ 'error' => 405, 'message' => 'Access denied' ];
+		} else if ( $request['method']=='PUT' ) {
 			$result = filesystem::put($request['directory'], $request['filename']);
 		} else if ( $request['method']=='DELETE' ) {
 			$result = filesystem::delete($request['directory'], $request['filename']);
 		} else {
 			$status = 405; //Method not allowed
+			$result = [ 'error' => 405, 'message' => 'Method not allowed' ];
 		}
 	} catch( \Exception $e ) {
 		$code = $e->getCode();

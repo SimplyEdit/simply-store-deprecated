@@ -1,104 +1,72 @@
 <?php
+	require_once(__DIR__.'/../http.php');
+	require_once(__DIR__.'/../filesystem.php');
 
-	$basePath = __DIR__;
-	$protocol = $_SERVER['SERVER_PROTOCOL']?:'HTTP/1.1';
+	filesystem::basedir(__DIR__);
 
-	if (
-		(isset($_SERVER['REQUEST_METHOD'])) &&
-		($_SERVER['REQUEST_METHOD'] != 'PUT') &&
-		($_SERVER['REQUEST_METHOD'] != 'DELETE')
-	) {
-		header($protocol ." 405 Method not allowed");
-		exit;
-	}
+	filesystem::allow('/data/','application/json');
+	filesystem::allow('/data/','text/javascript');
+	filesystem::allow('/data/','text/x-json');
 
-	function sanitizeTarget( $target) {
-		$target = preg_replace("@^/@", "", $target);
+	filesystem::allow('/img/','image/*');
 
-		// Only allow A-Z, 0-9, .-_/
-		$target = preg_replace("/[^A-Za-z\.\/0-9_-]/", "", $target);
-
-		// Remove any runs of periods
-		$target = preg_replace("/([\.]{2,})/", "", $target);
-
-		return $target;
-	}
-
-	function checkTarget($target) {
-		return preg_match("@^(img|data)/@", $target);
-	}
-
-	$target = $_SERVER["REQUEST_URI"];
-	$target = sanitizeTarget($target);
-
-	if (!checkTarget($target)) {
-		header($protocol ." 403 Forbidden");
-		exit;
-	}
-
-	preg_match('@(?<dirname>.+/)(?<filename>[^/]*)@',$target,$matches);
-	$filename = $matches['filename'];
-	$dirname  = $basePath . '/' . $matches['dirname'];
-
-	if ( $_SERVER['REQUEST_METHOD'] == "PUT" ) {
-		if (!file_exists($dirname)) {
-			// suppress errors from mkdir, it is noisy
-			$res = @mkdir($dirname, true);
-			if ($res == false) {
-				header($protocol . " 412 Precondition Failed");
-				echo "Directory not writeable\n";
-				exit();
-			}
+	filesystem::check('put', '/data/', function($filename, $realfile) {
+		$contents = file_get_contents($realfile);
+		$result   = json_decode($contents);
+		if ( $result === null ) {
+			throw new \Exception('File does not contain valid JSON',1);
 		}
+		return true;
+	});
 
-		if ( !is_writable($dirname) ){
-			header($protocol . " 412 Precondition Failed");
-			echo "Directory not writeable\n";
-			exit();
+	filesystem::check('delete', '/data/data.json', function() {
+		throw new \Exception('You cannot delete the data.json file',3);
+	});
+
+	filesystem::check('put', '/', function($filename, $realfile) {
+		$disallowed = ['php','phtml','inc','phar','cgi'];
+		$extension  = pathinfo($filename, PATHINFO_EXTENSION);
+		if ( in_array($extension, $disallowed) ) {
+			throw new \Exception('Extension '.$extension.' is disallowed', 2);
+		}
+	});
+
+	$statusCodes = [
+		1   => 412,
+		2   => 403,
+		3   => 403,
+		102 => 412,	// precondition failed
+		103 => 412,
+		104 => 412,
+		105 => 404,	// not found
+		106 => 403, // access denied
+		107 => 403,
+		108 => 403,
+		109 => 412,
+		110 => 403
+	];
+
+	$request = http::request();
+
+	$result = [];
+	$status = 200;
+
+	try {
+		if ( $request['method']=='PUT') {
+			$result = filesystem::put($request['directory'], $request['filename']);
+		} else if ( $request['method']=='DELETE' ) {
+			$result = filesystem::delete($request['directory'], $request['filename']);
 		} else {
-			if ( $filename ) {
-				$exists = file_exists($dirname.$filename);
-				if (
-					($exists === true && is_writable($dirname.$filename) ) ||
-					$exists === false
-				){
-					/* PUT data comes in on the stdin stream */
-					$in = fopen("php://input", "r");
-
-					/* Open a file for writing */
-					$tempfile = tempnam($dirname, 'put-XXXXXX');
-
-					$out = fopen($tempfile, "w");
-					$res = stream_copy_to_stream($in,$out);
-
-					/* Close the streams */
-					fclose($out);
-					fclose($in);
-
-					if($res) {
-						$res = rename($tempfile, $dirname.$filename);
-						if ($res == false) {
-							header($protocol . " 412 Precondition Failed");
-							unlink($tempfile);
-						}
-					} else {
-						unlink($tempfile);
-					}
-				} else {
-					header($protocol . " 412 Precondition Failed");
-					echo "Target file not writeable\n";
-				}
-			}
+			$status = 405; //Method not allowed
 		}
-	} else if ( $_SERVER['REQUEST_METHOD'] == "DELETE" ) {
-		$target = $dirname . $filename;
-		if ( file_exists($target ) ) {
-			if ( $filename ) {
-				unlink($target);
-			} else {
-				rmdir($target);
-			}
+	} catch( \Exception $e ) {
+		$code = $e->getCode();
+		if ( isset($statusCodes[$code]) ) {
+			$status = $statusCode[$code];
 		} else {
-			header($protocol . " 404 Not Found");
+			$status = 500; // internal error
 		}
+		$result = [ 'error' => $code, 'message' => $e->getMessage() ];
 	}
+
+	http::response( $status, $result );

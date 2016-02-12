@@ -1,32 +1,51 @@
 <?php
-	$datafile = "data/data.json";
-	$templateContainer = '../';
-	$request = null;
-	$data = null;
+	require_once(__DIR__.'/../http.php');
+	require_once(__DIR__.'/../filesystem.php');
 
-	if ( isset($_SERVER['REQUEST_URI'] ) ){
-		$request = $_SERVER['REQUEST_URI'];
+	filesystem::basedir(__DIR__);
+	http::format('html');
+
+	$datafile    = __DIR__.'/data/data.json';
+	$templateDir = __DIR__.'/../templates/';
+	$request     = null;
+	
+	$request     = http::request();
+
+	$data        = json_decode(filesystem::get($request['dirname'], $request['filename']));
+
+	$path        = $request['dirname'].$request['filename'];
+	$status      = 200;
+
+	if( !isset($data[$path]) ) {
+		$path   = '/404.html';
+		$status = 404;
 	}
 
-	if ( file_exists($datafile) ) {
-		$json = file_get_contents($datafile);
-		$data = json_decode($json, true);
-	}
-
-	if( isset($request) && isset($data[$request]) ) {
+	if ( isset($data[$path]) ) {
 		$template = "index.html";
-		// FIXME: make sure pageTemplate is not some ../../../etc/passwd\0.html
 
-		if( isset($data[$request]['data-simply-page-template']['content'])) {
-			$pageTemplate = $data[$request]['data-simply-page-template']['content'];
-			if (preg_match("/\.html$/", $pageTemplate) && file_exists($templateContainer . $pageTemplate)) {
+		if( isset($data[$path]['data-simply-page-template']['content'])) {
+			$pageTemplate = $data[$path]['data-simply-page-template']['content'];
+			if (preg_match("/\.html$/", $pageTemplate) && file_exists($templateDir . $pageTemplate)) {
 				$template = $pageTemplate;
 			}
 		}
 
-		header("HTTP/1.1 200 OK");
-		readfile($templateContainer . $template);
+		http::response($status);
+		filesystem::readfile($templateDir, $template);
+
 	} else {
-		header("HTTP/1.1 404 Not Found");
-		echo "<html><head><title>404 Not Found</title></head><body><h1>Page not found (error: 404)</h1></body></hhtml>";
+		http::response(404);
+		echo <<<'EOF';
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>404 Not Found</title>
+</head>
+<body>
+	<h1>Page not found (error: 404)</h1>
+</body>
+</html>
+EOF;
 	}

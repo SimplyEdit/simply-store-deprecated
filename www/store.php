@@ -52,8 +52,12 @@
 
 	try {
 		if ( !$request['user'] ) {
-			$status = 403; //Method not allowed
-			$result = [ 'error' => 405, 'message' => 'Access denied' ];
+			$status = 401; //Access denied
+			if ( $_SERVER['PHP_AUTH_USER'] ) {
+				$result = [ 'error' => 511, 'message' => 'Webserver not configured to handle Basic Authentication'];
+			} else {
+				$result = [ 'error' => 405, 'message' => 'Access denied' ];
+			}
 		} else if ( $request['method']=='PUT' ) {
 			$result = filesystem::put($request['directory'], $request['filename']);
 		} else if ( $request['method']=='DELETE' ) {

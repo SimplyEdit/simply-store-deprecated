@@ -186,7 +186,8 @@ class filesystem {
 
 		/* Open a file for writing */
 		$tempfile = tempnam($realdir, 'put-XXXXXX');
-
+		chmod($tempfile, 0644);
+		
 		$out      = fopen($tempfile, "w");
 		$res      = stream_copy_to_stream($in,$out);
 

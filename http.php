@@ -42,9 +42,9 @@ class http {
 			'method'    => $_SERVER['REQUEST_METHOD'],
 			'directory' => $dirname,
 			'filename'  => $filename,
-			'user'      => isset($_SERVER['REMOTE_USER']) ? $_SERVER['REMOTE_USER'] :
+			'user'      => isset($_SERVER['REMOTE_USER']) ? $_SERVER['REMOTE_USER'] : (
 							isset($_SERVER['REDIRECT_REMOTE_USER']) ? $_SERVER['REDIRECT_REMOTE_USER'] :
-							'',
+							''),
 			'docroot'   => $docroot
 		];
 	}

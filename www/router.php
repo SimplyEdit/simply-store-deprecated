@@ -22,7 +22,7 @@
 		$data = [];
 	}
 
-	$path        = $request['directory'].$request['filename'];
+	$path        = $request['target'];
 	$status      = 200;
 
 	if( !isset($data[$path]) ) {

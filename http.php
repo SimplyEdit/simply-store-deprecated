@@ -35,11 +35,12 @@ class http {
 		$filename = isset($matches['filename']) ? $matches['filename'] : '';
 		$dirname  = '/' . ( isset($matches['dirname']) ? $matches['dirname'] : '');
 		$docroot  = $_SERVER['DOCUMENT_ROOT'];
-		$subdir   = substr( dirname($_SERVER['SCRIPT_FILENAME']), strlen($docroot));
+		$subdir   = '/' . substr( dirname($_SERVER['SCRIPT_FILENAME']), strlen($docroot) );
 		$dirname  = substr($dirname, strlen($subdir));
 		return [
 			'protocol'  => $_SERVER['SERVER_PROTOCOL']?:'HTTP/1.1',
 			'method'    => $_SERVER['REQUEST_METHOD'],
+			'target'    => '/'.$target,
 			'directory' => $dirname,
 			'filename'  => $filename,
 			'user'      => isset($_SERVER['REMOTE_USER']) ? $_SERVER['REMOTE_USER'] : (

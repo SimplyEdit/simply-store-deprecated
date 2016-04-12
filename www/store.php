@@ -69,7 +69,7 @@
 	} catch( \Exception $e ) {
 		$code = $e->getCode();
 		if ( isset($statusCodes[$code]) ) {
-			$status = $statusCode[$code];
+			$status = $statusCodes[$code];
 		} else {
 			$status = 500; // internal error
 		}

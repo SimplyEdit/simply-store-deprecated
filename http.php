@@ -6,11 +6,13 @@ class http {
 
 	private static function sanitizeTarget($target)
 	{
+		$target = rawurldecode($target);
+
 		// convert \ to /
 		$target = str_replace('\\','/',$target);
 
 		// Only allow A-Z, 0-9, .-_/
-		$target = preg_replace('/[^A-Za-z\.\/0-9_-]/', '', $target);
+		$target = preg_replace('/[^A-Za-z\.\/0-9_-]/', '-', $target);
 
 		// Remove any double periods
 		$target = preg_replace('{(^|\/)[\.]{1,2}\/}', '/', $target);

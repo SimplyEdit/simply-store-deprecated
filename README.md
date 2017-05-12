@@ -1,3 +1,5 @@
+# This repo is deprecated, please use SimplyEdit/simply-edit instead
+
 Steps to deploy this storage layer:
 - create a htpasswd file (somewhere outside the webroot) 
 ```htpasswd -c simply-store-htpasswd username```
